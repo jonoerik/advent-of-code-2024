@@ -16,4 +16,4 @@ def part1(input_data: InputType) -> ResultType:
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass
+    return sum([a * input_data[1].count(a) for a in input_data[0]])
