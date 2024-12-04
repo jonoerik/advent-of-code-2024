@@ -8,7 +8,7 @@ ResultType = int
 
 def load(input_path: Path) -> InputType:
     with open(input_path) as f:
-        return list(map(list, zip(*[map(int, line.strip().split()) for line in f.readlines()])))
+        return tuple(map(list, zip(*[map(int, line.strip().split()) for line in f.readlines()])))
 
 
 def part1(input_data: InputType) -> ResultType:
