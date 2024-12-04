@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import itertools
 from pathlib import Path
 
 InputType = list[list[int]]
@@ -20,4 +21,16 @@ def part1(input_data: InputType) -> ResultType:
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass
+    def is_safe(l: list[int]) -> bool:
+        pairs = list(zip(l[:-1], l[1:]))
+        if all(map(lambda x: x[0] < x[1] <= x[0] + 3, pairs)) or all(map(lambda x: x[1] < x[0] <= x[1] + 3, pairs)):
+            return True
+
+        for partial_l in itertools.combinations(l, len(l) - 1):
+            partial_pairs = list(zip(partial_l[:-1], partial_l[1:]))
+            if all(map(lambda x: x[0] < x[1] <= x[0] + 3, partial_pairs)) or all(map(lambda x: x[1] < x[0] <= x[1] + 3, partial_pairs)):
+                return True
+
+        return False
+
+    return [is_safe(record) for record in input_data].count(True)
