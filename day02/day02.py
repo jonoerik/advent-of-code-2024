@@ -28,7 +28,8 @@ def part2(input_data: InputType) -> ResultType:
 
         for partial_l in itertools.combinations(l, len(l) - 1):
             partial_pairs = list(zip(partial_l[:-1], partial_l[1:]))
-            if all(map(lambda x: x[0] < x[1] <= x[0] + 3, partial_pairs)) or all(map(lambda x: x[1] < x[0] <= x[1] + 3, partial_pairs)):
+            if all(map(lambda x: x[0] < x[1] <= x[0] + 3, partial_pairs)) or \
+                all(map(lambda x: x[1] < x[0] <= x[1] + 3, partial_pairs)):
                 return True
 
         return False
