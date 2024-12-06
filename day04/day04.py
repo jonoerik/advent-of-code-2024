@@ -24,4 +24,7 @@ def part1(input_data: InputType) -> ResultType:
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass
+    return ["".join([input_data[r + dr][c + dc] for dr, dc in [(-1, -1), (-1, 1), (0, 0), (1, -1), (1, 1)]])
+            in ["MMASS", "SMASM", "SSAMM", "MSAMS"]
+            for r in range(1, len(input_data) - 1) for c in range(1, len(input_data[0]) - 1)
+            ].count(True)
