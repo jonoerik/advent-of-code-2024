@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 from pathlib import Path
 
 InputType = list[tuple[int, list[int]]]
@@ -23,4 +24,16 @@ def part1(input_data: InputType) -> ResultType:
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass
+    def solution_possible(result: int, operands: list[int]) -> bool:
+        assert len(operands) > 0
+        if len(operands) == 1:
+            return result == operands[0]
+
+        last_operand_len = 1 if operands[-1] == 0 else math.floor(math.log10(operands[-1])) + 1
+
+        return solution_possible(result - operands[-1], operands[:-1]) or \
+            (result % operands[-1] == 0 and solution_possible(result // operands[-1], operands[:-1])) or \
+            ((result - operands[-1]) % (10 ** last_operand_len) == 0 and
+             solution_possible((result - operands[-1]) // (10 ** last_operand_len), operands[:-1]))
+
+    return sum([result for result, operands in input_data if solution_possible(result, operands)])
