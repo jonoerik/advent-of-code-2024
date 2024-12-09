@@ -2,6 +2,7 @@
 
 import collections
 import itertools
+import math
 from pathlib import Path
 
 # Map of antenna ID to list of locations (row, col) where that antenna is present, and map width and height.
@@ -37,4 +38,25 @@ def part1(input_data: InputType) -> ResultType:
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass
+    antinodes = set()
+    antennas, (width, height) = input_data
+
+    for antenna_id, positions in antennas.items():
+        for a, b in itertools.combinations(positions, 2):
+            delta_r = b[0] - a[0]
+            delta_c = b[1] - a[1]
+            n = math.gcd(delta_r, delta_c)
+            delta_r = delta_r // n
+            delta_c = delta_c // n
+
+            antinode = a
+            while 0 <= antinode[0] < height and 0 <= antinode[1] < width:
+                antinodes.add(antinode)
+                antinode = (antinode[0] - delta_r, antinode[1] - delta_c)
+
+            antinode = a
+            while 0 <= antinode[0] < height and 0 <= antinode[1] < width:
+                antinodes.add(antinode)
+                antinode = (antinode[0] + delta_r, antinode[1] + delta_c)
+
+    return len(antinodes)
