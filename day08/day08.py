@@ -4,26 +4,26 @@ import collections
 import itertools
 from pathlib import Path
 
-InputType = list[str]
+# Map of antenna ID to list of locations (row, col) where that antenna is present, and map width and height.
+InputType = tuple[dict[str, list[tuple[int, int]]], tuple[int, int]]
 ResultType = int
 
 
 def load(input_path: Path) -> InputType:
     with open(input_path) as f:
-        return [line.strip() for line in f.readlines()]
+        antenna_layout = [line.strip() for line in f.readlines()]
 
-
-def part1(input_data: InputType) -> ResultType:
-    # Map of antenna ID to list of locations (row, col) where that antenna is present.
-    antennas: dict[str: list[tuple[int, int]]] = collections.defaultdict(list)
-    for r, row in enumerate(input_data):
+    antennas: dict[str, list[tuple[int, int]]] = collections.defaultdict(list)
+    for r, row in enumerate(antenna_layout):
         for c, antenna_id in enumerate(row):
             if antenna_id != ".":
                 antennas[antenna_id].append((r, c))
+    return antennas, (len(antenna_layout[0]), len(antenna_layout))
 
+
+def part1(input_data: InputType) -> ResultType:
     antinodes = set()
-    height = len(input_data)
-    width = len(input_data[0])
+    antennas, (width, height) = input_data
 
     for antenna_id, positions in antennas.items():
         for a, b in itertools.permutations(positions, 2):
