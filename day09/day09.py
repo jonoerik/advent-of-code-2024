@@ -15,21 +15,42 @@ def load(input_path: Path) -> InputType:
 
 
 def part1(input_data: InputType) -> ResultType:
-    # Expand out the dense representation of the disk map.
-    data = [c for a in zip([n * [i] for i,n in enumerate(input_data[:-1:2])], [n * [None]for n in input_data[1::2]])
-            for b in a for c in b] + ([len(input_data) // 2] * input_data[-1])
+    # Convert to a [(value, run-length] representation.
+    data = [(i // 2 if i % 2 == 0 else None, v) for i, v in enumerate(input_data) if v != 0]
 
-    # Compact the filesystem.
-    while None in data:
-        if data[-1] is None:
-            data = data[:-1]
+    # Compact the disk.
+    while True:
+        while data[-1][0] is None:
+            del data[-1]
+
+        try:
+            i = [v for v, _ in data].index(None)
+        except ValueError:
+            break
+
+        dest_length = data[i][1]
+        source_length = data[-1][1]
+        if dest_length < source_length:
+            data[i] = (data[-1][0], dest_length)
+            data[-1] = (data[-1][0], source_length - dest_length)
+        elif dest_length == source_length:
+            data[i] = (data[-1][0], dest_length)
+            del data[-1]
         else:
-            data[data.index(None)] = data[-1]
-            data = data[:-1]
+            data[i] = (data[-1][0], source_length)
+            data.insert(i + 1, (None, dest_length - source_length))
+            del data[-1]
+
+    assert None not in [v for v, _ in data]
 
     # Calculate the checksum.
-    return sum([i * x for i, x in enumerate(data)])
+    i = 0
+    total = 0
+    for v, r in data:
+        total += v * sum(range(i, i + r))
+        i += r
 
+    return total
 
 def part2(input_data: InputType) -> ResultType:
     pass
