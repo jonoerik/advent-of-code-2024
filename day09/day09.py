@@ -14,9 +14,25 @@ def load(input_path: Path) -> InputType:
     return result[0]
 
 
+def run_length_representation(input_data: InputType) -> list[tuple[int | None, int]]:
+    """Return a [(value, run-length)] representation of the disk, from the dense input format.
+    e.g. [3, 2, 4, 1, 1] -> [0, 0, 0, None, None, 1, 1, 1, 1, None, 2] -> [(0, 3), (None, 2), (1, 4), (None, 1), (2, 1)]"""
+    return [(i // 2 if i % 2 == 0 else None, v) for i, v in enumerate(input_data) if v != 0]
+
+
+def calculate_checksum(disk: list[tuple[int | None, int]]) -> int:
+    i = 0
+    total = 0
+    for v, r in disk:
+        if v is not None:
+            total += v * sum(range(i, i + r))
+        i += r
+
+    return total
+
+
 def part1(input_data: InputType) -> ResultType:
-    # Convert to a [(value, run-length] representation.
-    data = [(i // 2 if i % 2 == 0 else None, v) for i, v in enumerate(input_data) if v != 0]
+    data = run_length_representation(input_data)
 
     # Compact the disk.
     while True:
@@ -43,14 +59,53 @@ def part1(input_data: InputType) -> ResultType:
 
     assert None not in [v for v, _ in data]
 
-    # Calculate the checksum.
-    i = 0
-    total = 0
-    for v, r in data:
-        total += v * sum(range(i, i + r))
-        i += r
+    return calculate_checksum(data)
 
-    return total
 
 def part2(input_data: InputType) -> ResultType:
-    pass
+    data = run_length_representation(input_data)
+
+    def compact(d):
+        def find_free_space(min_size: int) -> int | None:
+            """Return the index of the first free space section in d which is of at least size min_size, or
+            None if no such space exists."""
+            for i, (v, r) in enumerate(d):
+                if v is None and r >= min_size:
+                    return i
+            return None
+
+        for v in range(max([v for v, _ in d if v is not None]), -1, -1):
+            src_i = [v for v, _ in d].index(v)
+            src_len = d[src_i][1]
+            dest_i = find_free_space(src_len)
+
+            if dest_i is None or dest_i >= src_i:
+                continue
+            dest_len = d[dest_i][1]
+
+            if dest_len == src_len:
+                d[dest_i] = (v, dest_len)
+            else:
+                assert dest_len > src_len
+                d.insert(dest_i, (v, src_len))
+                src_i += 1
+                d[dest_i + 1] = (None, dest_len - src_len)
+            d[src_i] = (None, src_len)
+
+            # Merge empty space around src_i.
+            while 0 <= src_i < len(d) - 1 and d[src_i + 1][0] is None:
+                src_len += d[src_i + 1][1]
+                d[src_i] = (None, src_len)
+                del d[src_i + 1]
+            while 0 < src_i < len(d) and d[src_i - 1][0] is None:
+                src_len += d[src_i - 1][1]
+                d[src_i] = (None, src_len)
+                del d[src_i - 1]
+                src_i -= 1
+
+            # Remove empty space at the end of the disk.
+            while d[-1][0] is None:
+                del d[-1]
+
+    compact(data)
+    return calculate_checksum(data)
