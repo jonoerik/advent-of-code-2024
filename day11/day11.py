@@ -15,20 +15,25 @@ def load(input_path: Path) -> InputType:
 
 
 def part1(input_data: InputType, blinks: int = 25) -> ResultType:
-    for i in range(blinks):
-        # I <3 gross nested list comprehensions.
-        input_data = [n for n1, n2 in
-                      [((1, None)
-                        if (n == 0)
-                        else ((n // (10 ** (math.ceil(math.log10(n+1)) // 2)),
-                               n % (10 ** (math.ceil(math.log10(n+1)) // 2)))
-                              if (math.ceil(math.log10(n+1)) % 2 == 0)
-                              else (n * 2024, None)
-                              )
-                        ) for n in input_data
-                       ] for n in (n1, n2) if n is not None]
+    for _ in range(blinks):
+        i = 0
+        while i < len(input_data):
+            v = input_data[i]
+            if v == 0:
+                input_data[i] = 1
+            else:
+                num_digits = math.ceil(math.log10(v+1))
+                if num_digits % 2 == 0:
+                    m = 10 ** (num_digits // 2)
+                    input_data[i] = v // m
+                    input_data.insert(i + 1, v % m)
+                    i += 1
+                else:
+                    input_data[i] = v * 2024
+            i += 1
+
     return len(input_data)
 
 
-def part2(input_data: InputType) -> ResultType:
-    pass  # TODO
+def part2(input_data: InputType, blinks: int = 75) -> ResultType:
+    return part1(input_data, blinks)
