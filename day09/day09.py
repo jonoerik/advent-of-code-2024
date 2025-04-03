@@ -66,16 +66,25 @@ def part2(input_data: InputType) -> ResultType:
     data = run_length_representation(input_data)
 
     def compact(d):
+        first_free_i = 0
         def find_free_space(min_size: int) -> int | None:
             """Return the index of the first free space section in d which is of at least size min_size, or
             None if no such space exists."""
-            for i, (v, r) in enumerate(d):
-                if v is None and r >= min_size:
+            nonlocal first_free_i
+            while d[first_free_i][0] is not None:
+                first_free_i += 1
+
+            for i in range(first_free_i, len(d)):
+                if d[i][0] is None and d[i][1] >= min_size:
                     return i
             return None
 
         for v in range(max([v for v, _ in d if v is not None]), -1, -1):
-            src_i = [v for v, _ in d].index(v)
+            # Get `[v for v, _ in d].index(v)`, with the search starting at the end of the list.
+            src_i = None
+            for src_i in range(len(d) - 1, -1, -1):
+                if d[src_i][0] == v:
+                    break
             src_len = d[src_i][1]
             dest_i = find_free_space(src_len)
 
