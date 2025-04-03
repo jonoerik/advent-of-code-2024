@@ -32,4 +32,19 @@ def part1(input_data: InputType) -> ResultType:
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass  # TODO
+    trailheads = [(row, col) for row, line in enumerate(input_data) for col, val in enumerate(line) if val == 0]
+
+    def trail_rating(row, col) -> int:
+        v = input_data[row][col]
+        if v is None:
+            return 0
+        if v == 9:
+            return 1
+
+        return sum([trail_rating(next_row, next_col) for next_row, next_col
+                    in [(row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)]
+                    if 0 <= next_row < len(input_data)
+                    and 0 <= next_col < len(input_data[0])
+                    and input_data[next_row][next_col] == v + 1])
+
+    return sum([trail_rating(*trailhead) for trailhead in trailheads])
