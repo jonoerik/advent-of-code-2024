@@ -16,23 +16,36 @@ def load(input_path: Path) -> InputType:
 
 
 def part1(input_data: InputType, blinks: int = 25) -> ResultType:
-    def next_blink(it: Iterator[int]) -> Iterator[int]:
-        for v in it:
-            if v == 0:
-                yield 1
-            else:
-                num_digits = math.ceil(math.log10(v + 1))
-                if num_digits % 2 == 0:
-                    m = 10 ** (num_digits // 2)
-                    yield v // m
-                    yield v % m
-                else:
-                    yield v * 2024
+    # Memo of (stone value, blinks) -> number of stones.
+    memo: dict[tuple[int, int], int] = {}
+    def total_stones(v: int, b: int) -> int:
+        """
+        v: value of current stone.
+        b: number of blinks to simulate.
+        """
+        nonlocal memo
 
-    stones = iter(input_data)
-    for _ in range(blinks):
-        stones = next_blink(stones)
-    return sum([1 for _ in stones])
+        if b == 0:
+            return 1
+
+        if (v, b) in memo:
+            return memo[(v, b)]
+
+        result = None
+        if v == 0:
+            result = total_stones(1, b - 1)
+        else:
+            num_digits = math.ceil(math.log10(v + 1))
+            if num_digits % 2 == 0:
+                m = 10 ** (num_digits // 2)
+                result = total_stones(v // m, b - 1) + total_stones(v % m, b - 1)
+            else:
+                result = total_stones(v * 2024, b - 1)
+        memo[(v, b)] = result
+        return result
+
+
+    return sum([total_stones(stone, blinks) for stone in input_data])
 
 
 def part2(input_data: InputType, blinks: int = 75) -> ResultType:
