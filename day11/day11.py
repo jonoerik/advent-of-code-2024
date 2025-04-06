@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from collections.abc import Iterator
 import math
 from pathlib import Path
 
@@ -31,7 +30,6 @@ def part1(input_data: InputType, blinks: int = 25) -> ResultType:
         if (v, b) in memo:
             return memo[(v, b)]
 
-        result = None
         if v == 0:
             result = total_stones(1, b - 1)
         else:
