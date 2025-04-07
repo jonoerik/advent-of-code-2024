@@ -29,25 +29,28 @@ def load(input_path: Path) -> InputType:
                 [machine_regex.fullmatch(s) for s in f.read().strip().split("\n\n")]]
 
 
+def get_required_tokens(machine: ClawMachine, max_presses: int = None) -> int | None:
+    # a_x * a_presses + bx * b_presses = prize_x
+    # a_y * a_presses + by * b_presses = prize_y
+    # Solve as a system of linear equations.
+
+    m = sympy.Matrix([[machine.a[0], machine.b[0]], [machine.a[1], machine.b[1]]])
+    p = sympy.Matrix([machine.prize[0], machine.prize[1]])
+    solution = m.inv() * p
+    if solution[0] % 1 != 0 or solution[1] % 1 != 0:
+        return None
+    if max_presses is not None:
+        if solution[0] > max_presses or solution[1] > max_presses:
+            return None
+    return 3 * solution[0] + solution[1]
+
+
 def part1(input_data: InputType) -> ResultType:
-    result = 0
-
-    for machine in input_data:
-        # a_x * a_presses + bx * b_presses = prize_x
-        # a_y * a_presses + by * b_presses = prize_y
-        # Solve as a system of linear equations.
-
-        m = sympy.Matrix([[machine.a[0], machine.b[0]], [machine.a[1], machine.b[1]]])
-        p = sympy.Matrix([machine.prize[0], machine.prize[1]])
-        solution = m.inv() * p
-        if solution[0] % 1 != 0 or solution[1] % 1 != 0:
-            continue
-        if solution[0] > 100 or solution[1] > 100:
-            continue
-        result += 3 * solution[0] + solution[1]
-
-    return result
+    return sum([result for result in [get_required_tokens(m, 100) for m in input_data] if result is not None])
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass  # TODO
+    prize_offset = 10000000000000
+    return sum([result for result in [get_required_tokens(
+        ClawMachine(m.a, m.b, (m.prize[0] + prize_offset, m.prize[1] + prize_offset))
+    ) for m in input_data] if result is not None])
