@@ -26,27 +26,53 @@ def part1(input_data: InputType) -> ResultType:
     start_r, start_c = [(r, c) for r, row in enumerate(input_data) for c, tile in enumerate(row) if tile == Tile.START][0]
     start_dr, start_dc = (0, 1)
 
-    def cost_to_end(r: int, c: int, dr: int, dc: int, visited: set[tuple[int, int, int, int]]) -> int | None:
-        """Return the smallest cost to get to the end tile, from (r, c), facing direction (dr, dc),
-        or None if this path shouldn't be considered because it revisits a previous state."""
+    # A node is (r, c, dr, dc).
+    NodeType = tuple[int, int, int, int]
+    # Node -> cost dictionary.
+    to_visit: dict[NodeType, int] = {(start_r, start_c, start_dr, start_dc): 0}
+    visited: set[NodeType] = set()
+
+    # Simple Dijkstra's Algorithm implementation.
+    # Could use A*, as using `cost to reach end tile, ignoring walls` is an admissible and consistent heuristic,
+    # but this simpler implementation is already sufficiently fast.
+    while to_visit:
+        current_node = min(to_visit, key=to_visit.get)
+        current_cost = to_visit[current_node]
+        del to_visit[current_node]
+        r, c, dr, dc = current_node
         if input_data[r][c] == Tile.END:
-            return 0
+            return current_cost
+        visited.add(current_node)
 
-        if input_data[r][c] == Tile.WALL:
-            return None
+        # Move straight ahead.
+        if input_data[r + dr][c + dc] != Tile.WALL:
+            next_r = r + dr
+            next_c = c + dc
+            while (input_data[next_r - dc][next_c + dr] == Tile.WALL
+                   and input_data[next_r + dc][next_c - dr] == Tile.WALL
+                   and input_data[next_r + dr][next_c + dc] != Tile.WALL):
+                # If moving down a corridor, move all the way to the next junction / corner / dead end.
+                next_r += dr
+                next_c += dc
+            dist = abs((r - next_r) + (c - next_c))
+            next_node = (next_r, next_c, dr, dc)
+            next_cost = current_cost + dist
+            if next_node not in visited:
+                if next_node not in to_visit or to_visit[next_node] > next_cost:
+                    to_visit[next_node] = next_cost
 
-        if (r, c, dr, dc) in visited:
-            return None
+        # Turn left.
+        next_node = (r, c, -dc, dr)
+        if next_node not in visited:
+            if next_node not in to_visit or to_visit[next_node] > current_cost + 1000:
+                to_visit[next_node] = current_cost + 1000
+        # Turn right.
+        next_node = (r, c, dc, -dr)
+        if next_node not in visited:
+            if next_node not in to_visit or to_visit[next_node] > current_cost + 1000:
+                to_visit[next_node] = current_cost + 1000
 
-        options = [a + b for a, b in [
-            (1, cost_to_end(r + dr, c + dc, dr, dc, visited | {(r, c, dr, dc)})),
-            (1000, cost_to_end(r, c, -dc, dr, visited | {(r, c, dr, dc)})),
-            (1000, cost_to_end(r, c, dc, -dr, visited | {(r, c, dr, dc)}))
-        ] if b is not None]
-        return min(options) if options else None
-
-    return cost_to_end(start_r, start_c, start_dr, start_dc, set())
-
+    assert False
 
 def part2(input_data: InputType) -> ResultType:
     pass  # TODO
