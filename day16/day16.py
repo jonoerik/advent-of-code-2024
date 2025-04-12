@@ -75,4 +75,62 @@ def part1(input_data: InputType) -> ResultType:
     assert False
 
 def part2(input_data: InputType) -> ResultType:
-    pass  # TODO
+    # Use the same approach as part 1, but for each node, track the set of nodes that precede it in any optimal paths.
+    start_r, start_c = [(r, c) for r, row in enumerate(input_data) for c, tile in enumerate(row) if tile == Tile.START][0]
+    start_dr, start_dc = (0, 1)
+
+    # A node is (r, c, dr, dc).
+    NodeType = tuple[int, int, int, int]
+    # Node -> cost, set of nodes that lead to this node in any optimal path.
+    to_visit: dict[NodeType, tuple[int, set[NodeType]]] = {(start_r, start_c, start_dr, start_dc): (0, set())}
+    # Node -> set of nodes that lead to this node in any optimal path.
+    visited: dict[NodeType, set[NodeType]] = {}
+
+    def add_to_visit(node: NodeType, cost: int, source: NodeType):
+        if node not in visited:
+            if node in to_visit:
+                if to_visit[node][0] == cost:
+                    to_visit[node][1].add(source)
+                elif to_visit[node][0] > cost:
+                    to_visit[node] = (cost, {source})
+            else:
+                to_visit[node] = (cost, {source})
+
+    def count_path_cells(end_r: int, end_c: int) -> int:
+        to_check: set[NodeType] = {end_node for end_node in visited if end_node[0] == end_r and end_node[1] == end_c}
+        checked: set[NodeType] = set()
+        while to_check:
+            check_node = to_check.pop()
+            checked.add(check_node)
+            for check_predecessor in visited[check_node]:
+                if check_predecessor not in checked:
+                    to_check.add(check_predecessor)
+
+        path_nodes = {(c_r, c_c) for c_r, c_c, _, _ in checked}
+        # Print the best paths through the map.
+        # print("\n".join(["".join(["#" if tile == Tile.WALL else "O" if (r, c) in path_nodes else "."
+        #                           for c, tile in enumerate(row)]) for r, row in enumerate(input_data)]))
+        return len(path_nodes)
+
+    while to_visit:
+        current_node = min(to_visit, key=lambda x: to_visit[x][0])
+        current_cost, source_nodes = to_visit[current_node]
+        del to_visit[current_node]
+        r, c, dr, dc = current_node
+        visited[current_node] = source_nodes
+
+        if (input_data[r][c] == Tile.END
+                and Tile.END not in [input_data[pending_node[0]][pending_node[1]] for pending_node in to_visit.keys()]):
+            return count_path_cells(r, c)
+
+        # Move straight ahead.
+        # Only move one tile, as we want all the path tiles to appear in visited, so the final count is correct.
+        if input_data[r + dr][c + dc] != Tile.WALL:
+            add_to_visit((r + dr, c + dc, dr, dc), current_cost + 1, current_node)
+
+        # Turn left.
+        add_to_visit((r, c, -dc, dr), current_cost + 1000, current_node)
+        # Turn right.
+        add_to_visit((r, c, dc, -dr), current_cost + 1000, current_node)
+
+    assert False
