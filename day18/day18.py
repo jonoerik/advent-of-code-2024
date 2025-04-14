@@ -55,9 +55,14 @@ def part1(input_data: InputType, coord_max: int = 70, simulated_bytes: int = 102
 
 
 def part2(input_data: InputType, coord_max: int = 70) -> ResultType2:
-    for i in range(len(input_data)+1):
-        if length_to_exit(input_data[:i], coord_max) is None:
-            return f"{input_data[i-1][0]},{input_data[i-1][1]}"
+    # Bounds for a binary search to find the first corruption that blocks the exit.
+    min_corruptions = 1
+    max_corruptions = len(input_data)
+    while min_corruptions != max_corruptions:
+        current_corruptions = min_corruptions + ((max_corruptions - min_corruptions) // 2)
+        if length_to_exit(input_data[:current_corruptions], coord_max) is None:
+            max_corruptions = current_corruptions
+        else:
+            min_corruptions = current_corruptions + 1
 
-    # If this is reached, the exit is never blocked by a corrupted byte.
-    assert False
+    return f"{input_data[min_corruptions-1][0]},{input_data[min_corruptions-1][1]}"
