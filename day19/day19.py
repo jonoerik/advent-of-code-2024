@@ -33,4 +33,19 @@ def part1(input_data: InputType) -> ResultType:
 
 
 def part2(input_data: InputType) -> ResultType:
-    pass  # TODO
+    towels, patterns = input_data
+
+    memo: dict[str, int] = {}
+    def ways_to_make(p: str) -> int:
+        nonlocal memo
+        if not p:
+            return 1
+
+        if p in memo:
+            return memo[p]
+
+        result = sum([ways_to_make(p[len(t):]) for t in towels if p.startswith(t)])
+        memo[p] = result
+        return result
+
+    return sum([ways_to_make(pattern) for pattern in patterns])
