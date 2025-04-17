@@ -95,15 +95,22 @@ def next_state(s: SearchState, k: DirKey) -> SearchState | None:
         return tuple(result_dirpad_robots), result_numpad_robot, s[2]
 
 
+def calculate_heuristic(code: str, s: SearchState) -> int:
+    """Return a heuristic estimate of the number manual button presses to reach the required code from state s."""
+    return 0
+
+
 def shortest_sequence(code: str, dir_pad_robot_count: int) -> int:
-    """Use Dijkstra's Algorithm to find the length of the shortest sequence of manual button presses to input the
+    """Use A* Algorithm to find the length of the shortest sequence of manual button presses to input the
     required code into the numeric keypad."""
-    to_visit: dict[SearchState, int] = {((DirKey.A,) * dir_pad_robot_count, AKey, ""): 0}
+    # {state: (current cost, current cost + heuristic)}
+    start_state = ((DirKey.A,) * dir_pad_robot_count, AKey, "")
+    to_visit: dict[SearchState, tuple[int, int]] = {start_state: (0, calculate_heuristic(code, start_state))}
     visited: set[SearchState] = set()
 
     while to_visit:
-        current_state = min(to_visit, key=to_visit.get)
-        cost = to_visit[current_state]
+        current_state = min(to_visit, key=lambda x: to_visit[x][1])
+        cost, total_heuristic = to_visit[current_state]
         del to_visit[current_state]
         if current_state[2] == code:
             return cost
@@ -116,8 +123,8 @@ def shortest_sequence(code: str, dir_pad_robot_count: int) -> int:
                 continue
             if not code.startswith(next_to_visit[2]):
                 continue
-            if next_to_visit not in to_visit or to_visit[next_to_visit] > cost + 1:
-                to_visit[next_to_visit] = cost + 1
+            if next_to_visit not in to_visit or to_visit[next_to_visit][0] > cost + 1:
+                to_visit[next_to_visit] = (cost + 1, cost + 1 + calculate_heuristic(code, next_to_visit))
 
     # Should have found a suitable sequence before exhausting the search space.
     assert False
