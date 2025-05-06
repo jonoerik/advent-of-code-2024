@@ -95,9 +95,31 @@ def next_state(s: SearchState, k: DirKey) -> SearchState | None:
 
 def calculate_heuristic(end_key: NumKey, s: SearchState) -> int:
     """Return a heuristic estimate of the number of manual button presses to reach the required end_key on the num pad,
-    from SearchState"""
-    #TODO
-    return 0
+    from SearchState. While this heuristic must be admissible, this A* implementation allows visited nodes to be
+    revisited if a lower cost path is found, so the heuristic isn't required to be consistent."""
+    # Gray code representation of robot states.
+    # Highest bit is 1 if the numpad robot is on end_key, 0 otherwise.
+    # Next bit is the dirpad robot immediately before the numpad robot, 0 if the robot is on the activate key,
+    # 1 otherwise.
+    # Successive dirpad robots are successive grey code bits, with the LSB being the first robot (after the manually
+    # actuated dirpad).
+    g = 1 if s[1] == end_key else 0
+    for dk in reversed(s[0]):
+        g <<= 1
+        if dk != DirKey.A:
+            g += 1
+
+    # Convert gray code representation to binary number.
+    # Wikipedia contributors. (2025, March 10). Gray code. In Wikipedia, The Free Encyclopedia.
+    # Retrieved 10:43, May 3, 2025, from https://en.wikipedia.org/w/index.php?title=Gray_code&oldid=1279704355
+    mask = g
+    while mask:
+        mask >>= 1
+        g ^= mask
+
+    # Take 2^bits - 1 - g, which is the bare minimum number of inputs to get to the desired end state.
+    result = 2 ** (len(s[0]) + 1) - 1 - g
+    return result
 
 
 shortest_sequence_next_key_memo: dict[tuple[NumKey, NumKey, int], int] = {}
@@ -112,26 +134,48 @@ def shortest_sequence_next_key(start_key: NumKey, end_key: NumKey, dir_pad_robot
         return shortest_sequence_next_key_memo[(start_key, end_key, dir_pad_robot_count)]
 
     start_state = ((DirKey.A,) * dir_pad_robot_count, start_key)
-    # {state: (current cost, current cost + heuristic)}
-    to_visit: dict[SearchState, tuple[int, int]] = {start_state: (0, calculate_heuristic(end_key, start_state))}
-    visited: set[SearchState] = set()
+    # {state: (current cost, current cost + heuristic, predecessor)}
+    to_visit: dict[SearchState, tuple[int, int, SearchState | None]] = \
+        {start_state: (0, calculate_heuristic(end_key, start_state), None)}
+    # {state: (lowest cost to reach found so far, predecessor)}
+    visited: dict[SearchState, tuple[int, SearchState]] = {}
 
     while to_visit:
         current_state = min(to_visit, key=lambda x: to_visit[x][1])
-        cost, total_heuristic = to_visit[current_state]
+        cost, total_heuristic, predecessor = to_visit[current_state]
         del to_visit[current_state]
         if current_state == ((DirKey.A,) * dir_pad_robot_count, end_key):
             shortest_sequence_next_key_memo[(start_key, end_key, dir_pad_robot_count)] = cost
+
+            #TODO comment
+            # Reconstruct and print the path of states.
+            path: list[SearchState] = [current_state]
+            next_path_node = predecessor
+            while next_path_node is not None:
+                path.append(next_path_node)
+                next_path_node = visited[next_path_node][1]
+            print(f"{"A" if start_key is AKey else start_key} -> {"A" if end_key is AKey else end_key}")
+            print("\t" + "\n\t".join([
+                "-".join([{DirKey.A: "A", DirKey.UP: "^", DirKey.DOWN: "v", DirKey.LEFT: "<", DirKey.RIGHT: ">"}[dirkey]
+                          for dirkey in path_node[0]]
+                         ) + "-" +
+                ("A" if path_node[1] is AKey else str(path_node[1])) for path_node in reversed(path)]))
+
             return cost
-        assert current_state not in visited
-        visited.add(current_state)
+
+        # Allow states to be revisited, as our heuristic may not be consistent, and a better path to an earlier visited
+        # state could be found later.
+        assert current_state not in visited or visited[current_state][0] > cost
+        visited[current_state] = (cost, predecessor)
 
         for key in DirKey:
             next_to_visit = next_state(current_state, key)
-            if next_to_visit is None or next_to_visit in visited:
+            if next_to_visit is None or (next_to_visit in visited and visited[next_to_visit][0] <= cost + 1):
                 continue
             if next_to_visit not in to_visit or to_visit[next_to_visit][0] > cost + 1:
-                to_visit[next_to_visit] = (cost + 1, cost + 1 + calculate_heuristic(end_key, next_to_visit))
+                to_visit[next_to_visit] = (cost + 1,
+                                           cost + 1 + calculate_heuristic(end_key, next_to_visit),
+                                           current_state)
 
     # Should have found a suitable sequence before exhausting the search space.
     assert False
@@ -154,6 +198,7 @@ def part1(input_data: InputType) -> ResultType:
     return sum([int(x[:-1]) * shortest_sequence(x, 2) for x in input_data])
 
 
-def part2(input_data: InputType) -> ResultType:
+#TODO remove rounds arg
+def part2(input_data: InputType, rounds=25) -> ResultType:
     assert all([x.endswith("A") and x[:-1].isnumeric() for x in input_data])
-    return sum([int(x[:-1]) * shortest_sequence(x, 25) for x in input_data])
+    return sum([int(x[:-1]) * shortest_sequence(x, rounds) for x in input_data])
