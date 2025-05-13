@@ -43,16 +43,14 @@ def part2(input_data: InputType) -> ResultType:
 
         last_price = next(price_chain)
         # Start with a dummy price difference value, which will be dropped before the first sequences_not_yet_seen check.
-        price_differences = [0]
+        price_differences = collections.deque([], 4)
         # Can't buy bananas at first 4 prices, as there hasn't been a long enough chain of price differences yet.
         for next_price in itertools.islice(price_chain, 3):
             price_differences.append(next_price - last_price)
             last_price = next_price
 
-        assert len(price_differences) == 4
-
         for next_price in price_chain:
-            price_differences = price_differences[1:] + [next_price - last_price]
+            price_differences.append(next_price - last_price)
             last_price = next_price
             if tuple(price_differences) in sequences_not_yet_seen:
                 banana_possibilities[tuple(price_differences)] += next_price
