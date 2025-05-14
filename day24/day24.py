@@ -14,7 +14,8 @@ WireInitType = dict[str, bool]
 # {(gate_type, input1, input2, output)}
 GateSetType = set[tuple[Gate, str, str, str]]
 InputType = tuple[WireInitType, GateSetType]
-ResultType = int
+ResultType1 = int
+ResultType2 = str
 
 
 def load(input_path: Path) -> InputType:
@@ -39,7 +40,7 @@ def load(input_path: Path) -> InputType:
         return inits, gates
 
 
-def part1(input_data: InputType) -> ResultType:
+def part1(input_data: InputType) -> ResultType1:
     wire_init, gates = input_data
     wire_states: dict[str, bool | None] = {
         wire: wire_init[wire] if wire in wire_init else None
@@ -60,5 +61,19 @@ def part1(input_data: InputType) -> ResultType:
     return sum(1 << int(wire[1:]) for wire in wire_states.keys() if wire.startswith("z") and wire_states[wire] == True)
 
 
-def part2(input_data: InputType) -> ResultType:
-    pass  # TODO
+def part2(input_data: InputType, num_gates_swapped = 4, expected_result = "sum") -> ResultType2:
+    wire_init, gates = input_data
+
+    match expected_result:
+        case "and":
+            assert all(g == Gate.AND and i1.startswith("x") and i2.startswith("y") and o.startswith("z") for
+                       g, i1, i2, o in gates)
+            swapped_gates = list(sorted((o for _, i1, i2, o in gates if i1[1:] != o[1:])))
+            assert len(swapped_gates) == num_gates_swapped * 2
+            return ",".join(swapped_gates)
+
+        case "sum":
+            pass  # TODO
+
+        case _:
+            assert False
