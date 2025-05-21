@@ -54,5 +54,6 @@ def part1(input_data: InputType) -> ResultType:
     return sum(1 if key_fits(key, lock) else 0 for key in keys for lock in locks)
 
 
-def part2(input_data: InputType) -> ResultType:
-    pass  # TODO
+def part2(input_data: InputType) -> None:
+    # Part 2 considered solved once all previous puzzles have been solved.
+    return None
